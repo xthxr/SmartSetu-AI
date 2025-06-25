@@ -1,25 +1,27 @@
-# data_fetch.py
+import os
+import json
 import gspread
-from google.oauth2.service_account import Credentials
 import pandas as pd
+from google.oauth2.service_account import Credentials
 
-# Google API scopes
-SCOPES = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive'
-]
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-# Authorize access
 def authorize_google_sheet():
     try:
-        creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
+        creds_info = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+        if creds_info:  # Render Deployment
+            creds = Credentials.from_service_account_info(json.loads(creds_info), scopes=SCOPES)
+        else:  # Local Machine (fallback to credentials.json)
+            creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
+
         client = gspread.authorize(creds)
         return client
+
     except Exception as e:
         print(" Error authorizing Google Sheets API:", e)
         return None
 
-# Fetch data using Sheet Key
 def fetch_vendor_data(sheet_key, worksheet_name="Form responses 1"):
     client = authorize_google_sheet()
     if client is None:
@@ -31,7 +33,6 @@ def fetch_vendor_data(sheet_key, worksheet_name="Form responses 1"):
         data = worksheet.get_all_records()
         df = pd.DataFrame(data)
 
-        #  Clean column names
         df.columns = df.columns.str.strip()
         df.columns = df.columns.str.replace("–", "-", regex=False)
         df.columns = df.columns.str.replace("’", "'", regex=False)
@@ -41,7 +42,8 @@ def fetch_vendor_data(sheet_key, worksheet_name="Form responses 1"):
         print(" Error fetching data from Google Sheet:", e)
         return pd.DataFrame()
 
-# Run standalone for testing
+
+#  Test run
 if __name__ == "__main__":
     SHEET_KEY = "1ccQAGRSCcJbJijorbBzSwU-wx60Ftf-2lzayKzCZQRw"
     df = fetch_vendor_data(SHEET_KEY)

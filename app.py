@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 from data_fetch import fetch_vendor_data
 from calculator import calculate_credit_score, calculate_risk_score, get_risk_level
 
 # Google Sheet Key
 SHEET_KEY = "1ccQAGRSCcJbJijorbBzSwU-wx60Ftf-2lzayKzCZQRw"
-st.set_page_config(page_title="Vendor Credit Scoring App", layout="wide")
-st.title("Vendor Credit & Risk Scoring Dashboard")
+st.set_page_config(page_title="SmartSetu-AI", layout="wide")
+st.title("SmartSetu-AI - Vendor Credit & Risk Scoring Dashboard")
 
 # Fetch vendor data
 df = fetch_vendor_data(SHEET_KEY)
@@ -108,7 +107,7 @@ if chart_type == "Bar Chart":
     ax.bar(risk_pos, score_df_plot["Risk Score"], width=bar_width, label="Risk Score", color="salmon")
     ax.set_xticks(x)
     ax.set_xticklabels(score_df_plot["Vendor"], rotation=rotation, ha="right")
-    ax.set_ylabel("Score (0–100)")
+    ax.set_ylabel("Score (0-100)")
     ax.set_title(f"Credit vs Risk Score for Top {top_n} Vendors")
     ax.legend()
     ax.grid(True, linestyle="--", alpha=0.5)
