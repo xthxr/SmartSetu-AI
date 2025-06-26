@@ -113,14 +113,26 @@ else:
 
 # EMI Calculator
 if loan_amount > 0:
-    months = 12
-    total_repayment = loan_amount + (loan_amount * interest_rate * months / (12 * 100))
-    emi = round(total_repayment / months, 2)
     st.sidebar.success(f" Eligible for a loan of ₹{loan_amount:,} at {interest_rate}% interest per year.")
+
+    st.sidebar.markdown("###  Simulate Your Loan Repayment")
+
+    # Vendor selects loan amount (within limit)
+    custom_loan = st.sidebar.slider("Select Loan Amount (₹)", 1000, loan_amount, step=1000)
+
+    # Vendor selects repayment period
+    custom_months = st.sidebar.slider("Select Repayment Duration (in months)", 6, 24, value=12)
+
+    # Calculate total repayment and EMI
+    total_repayment = custom_loan + (custom_loan * interest_rate * custom_months / (12 * 100))
+    emi = round(total_repayment / custom_months, 2)
+
     st.sidebar.markdown(f"""
-    EMI per month: ₹{emi:,}  
-    Total Repayment: ₹{round(total_repayment):,}  
-    Duration: {months} months  
+    -Loan Amount: ₹{custom_loan:,}  
+    -Interest Rate: {interest_rate}%  
+    -Duration: {custom_months} months  
+    -Monthly EMI: ₹{emi:,}  
+    -Total Repayment: ₹{round(total_repayment):,}
     """)
 else:
     st.sidebar.error(" Not eligible for a loan based on current credit score.")
