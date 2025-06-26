@@ -3,9 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from data_fetch import fetch_vendor_data
 from calculator import calculate_credit_score, calculate_risk_score, get_risk_level
+
 # Google Sheet Key
 SHEET_KEY = "1ccQAGRSCcJbJijorbBzSwU-wx60Ftf-2lzayKzCZQRw"
 st.set_page_config(page_title="SmartSetu-AI", layout="wide")
+
+# Logo
 st.markdown(
     """
     <div style="text-align: center;">
@@ -19,12 +22,11 @@ st.title("SmartSetu-AI - Vendor Credit & Risk Scoring Dashboard")
 
 # Fetch vendor data
 df = fetch_vendor_data(SHEET_KEY)
-
 if df.empty:
     st.warning("No vendor data found in the connected Google Sheet.")
     st.stop()
 
-# Calculate scores for each vendor
+# Score calculation
 scores = []
 max_txn = df["Monthly Transactions"].max()
 
@@ -56,7 +58,7 @@ for index, row in df.iterrows():
         })
 
     except Exception as e:
-        st.error(f"Error processing row {index + 1}: {e}")
+        st.error(f"Error in row {index+1}: {e}")
         scores.append({
             "Vendor": row.get("Name of Vendor", f"Vendor {index+1}"),
             "Credit Score": "Error",
@@ -64,12 +66,8 @@ for index, row in df.iterrows():
             "Risk Level": f"{type(e).__name__}: {str(e)}"
         })
 
-# Final DataFrame with scores
+# Final DataFrame
 score_df = pd.DataFrame(scores)
-
-# --- Sidebar: View Mode ---
-device_mode = st.sidebar.radio("Select View Mode:", ["Desktop", "Mobile"])
-fig_width, fig_height, rotation = (12, 6, 45) if device_mode == "Desktop" else (6, 4, 30)
 
 # --- Sidebar: Vendor Selection ---
 st.sidebar.title("Vendor Report Access")
@@ -77,73 +75,96 @@ search_query = st.sidebar.text_input("Search Vendor Name").strip().lower()
 filtered_vendors = (
     [v for v in score_df["Vendor"] if search_query in v.lower()] if search_query else score_df["Vendor"].tolist()
 )
-
 if not filtered_vendors:
     st.sidebar.warning("No matching vendor found.")
     filtered_vendors = score_df["Vendor"].tolist()
 
 selected_vendor = st.sidebar.selectbox("Choose a Vendor:", filtered_vendors)
-
-# Display selected vendor details
 selected_row = score_df[score_df["Vendor"] == selected_vendor].iloc[0]
+
+# Display selected vendor scores
 st.sidebar.markdown("### Vendor Score Report")
 st.sidebar.metric("Credit Score", selected_row["Credit Score"])
 st.sidebar.metric("Risk Score", selected_row["Risk Score"])
 st.sidebar.metric("Risk Level", selected_row["Risk Level"])
 
-# Download CSV for selected vendor
+# --- Output Section ---
+st.sidebar.markdown(" Loan Eligibility & Repayment Details")
+
+credit = selected_row["Credit Score"]
+risk = selected_row["Risk Score"]
+
+# Loan Eligibility Logic
+if credit >= 80:
+    loan_amount = 100000
+    interest_rate = 4
+elif credit >= 60:
+    loan_amount = 50000
+    interest_rate = 6
+elif credit >= 40:
+    loan_amount = 20000
+    interest_rate = 8
+elif credit >= 30:
+    loan_amount = 10000
+    interest_rate = 10
+else:
+    loan_amount = 0
+    interest_rate = 0
+
+# EMI Calculator
+if loan_amount > 0:
+    months = 12
+    total_repayment = loan_amount + (loan_amount * interest_rate * months / (12 * 100))
+    emi = round(total_repayment / months, 2)
+    st.sidebar.success(f" Eligible for a loan of ₹{loan_amount:,} at {interest_rate}% interest per year.")
+    st.sidebar.markdown(f"""
+    EMI per month: ₹{emi:,}  
+    Total Repayment: ₹{round(total_repayment):,}  
+    Duration: {months} months  
+    """)
+else:
+    st.sidebar.error(" Not eligible for a loan based on current credit score.")
+
+# Download button for selected vendor
 vendor_row_df = pd.DataFrame([selected_row])
 csv_data = vendor_row_df.to_csv(index=False).encode('utf-8')
-file_name = f"{selected_vendor.replace(' ', '_')}_report.csv"
-st.sidebar.download_button("Download My Report", data=csv_data, file_name=file_name, mime="text/csv")
+st.sidebar.download_button("Download My Report", data=csv_data, file_name=f"{selected_vendor}_report.csv", mime="text/csv")
 
-# --- Main: All Vendor Scores Table ---
-st.subheader("All Vendor Scores")
+
+
+# --- Main: All Vendors Table ---
+st.subheader(" All Vendor Scores")
 st.dataframe(score_df, use_container_width=True)
 
-# --- Main: Chart Type Selection ---
-st.subheader("Visualize Scores")
+# --- Charts ---
+st.subheader(" Visualize Scores")
 chart_type = st.selectbox("Select Chart Type:", ["Bar Chart", "Scatter Plot"])
+fig_width, fig_height, rotation = (12, 6, 45)
 
 if chart_type == "Bar Chart":
-    st.markdown("### Bar Chart: Credit vs Risk Score")
-    top_n = st.slider("Select number of vendors to display", min_value=5, max_value=len(score_df), value=10, step=5)
-    score_df_plot = score_df.sort_values("Credit Score", ascending=False).head(top_n)
-
+    top_n = st.slider("Select number of vendors", 5, len(score_df), 10, step=5)
+    top_df = score_df.sort_values("Credit Score", ascending=False).head(top_n)
     fig, ax = plt.subplots(figsize=(max(10, top_n * 0.6), fig_height))
-    x = range(len(score_df_plot))
+    x = range(len(top_df))
     bar_width = 0.35
-
-    credit_pos = [i - bar_width/2 for i in x]
-    risk_pos = [i + bar_width/2 for i in x]
-
-    ax.bar(credit_pos, score_df_plot["Credit Score"], width=bar_width, label="Credit Score", color="royalblue")
-    ax.bar(risk_pos, score_df_plot["Risk Score"], width=bar_width, label="Risk Score", color="salmon")
+    ax.bar([i - 0.2 for i in x], top_df["Credit Score"], width=bar_width, label="Credit", color="royalblue")
+    ax.bar([i + 0.2 for i in x], top_df["Risk Score"], width=bar_width, label="Risk", color="salmon")
     ax.set_xticks(x)
-    ax.set_xticklabels(score_df_plot["Vendor"], rotation=rotation, ha="right")
-    ax.set_ylabel("Score (0-100)")
-    ax.set_title(f"Credit vs Risk Score for Top {top_n} Vendors")
+    ax.set_xticklabels(top_df["Vendor"], rotation=rotation)
     ax.legend()
-    ax.grid(True, linestyle="--", alpha=0.5)
-
     st.pyplot(fig)
 
 elif chart_type == "Scatter Plot":
-    st.markdown("### Scatter Plot: Credit vs Risk Score")
-    fig2, ax2 = plt.subplots(figsize=(fig_width, fig_height))
-    ax2.scatter(score_df["Credit Score"], score_df["Risk Score"], c="purple", s=100)
-
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    ax.scatter(score_df["Credit Score"], score_df["Risk Score"], c="purple", s=100)
     for i, row in score_df.iterrows():
-        ax2.text(row["Credit Score"] + 0.5, row["Risk Score"] + 0.5, row["Vendor"], fontsize=8)
+        ax.text(row["Credit Score"] + 0.5, row["Risk Score"] + 0.5, row["Vendor"], fontsize=8)
+    ax.set_xlabel("Credit Score")
+    ax.set_ylabel("Risk Score")
+    ax.set_title("Credit Score vs Risk Score")
+    st.pyplot(fig)
 
-    ax2.set_xlabel("Credit Score")
-    ax2.set_ylabel("Risk Score")
-    ax2.set_title("Credit Score vs Risk Score Scatter Plot")
-    ax2.grid(True, linestyle="--", alpha=0.6)
-
-    st.pyplot(fig2)
-
-# --- Full CSV Download ---
-st.subheader("Download All Vendor Data")
-full_csv = score_df.to_csv(index=False).encode('utf-8')
-st.download_button("Download Full Vendor Scores as CSV", full_csv, "vendor_scores.csv", "text/csv")
+# --- Full CSV ---
+st.subheader(" Download All Vendor Scores")
+csv_all = score_df.to_csv(index=False).encode('utf-8')
+st.download_button("Download Full CSV", csv_all, "vendor_scores.csv", "text/csv")
