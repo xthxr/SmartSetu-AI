@@ -83,9 +83,14 @@ By default, the Google Sheet key is set in `app.py` with the variable `SHEET_KEY
 
 ## Acknowledgements
 
-- Inspired by original work from [mrashis06/SmartSetu-AI](https://github.com/mrashis06/SmartSetu-AI)
+- Original work from [mrashis06/SmartSetu-AI](https://github.com/mrashis06/SmartSetu-AI)
 - [Streamlit](https://streamlit.io/)
 - [Google Sheets API](https://developers.google.com/sheets/api)
+
+## Contributors
+- Ashis Kumar Rai (https://github.com/mrashis06)
+- Athar Akram (https://github.com/xthxr)
+
 
 ---
 
