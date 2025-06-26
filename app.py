@@ -3,11 +3,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from data_fetch import fetch_vendor_data
 from calculator import calculate_credit_score, calculate_risk_score, get_risk_level
-
 # Google Sheet Key
 SHEET_KEY = "1ccQAGRSCcJbJijorbBzSwU-wx60Ftf-2lzayKzCZQRw"
-
 st.set_page_config(page_title="SmartSetu-AI", layout="wide")
+st.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="https://raw.githubusercontent.com/mrashis06/SmartSetu-AI/main/assets/logo.png" width="150">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("SmartSetu-AI - Vendor Credit & Risk Scoring Dashboard")
 
 # Fetch vendor data

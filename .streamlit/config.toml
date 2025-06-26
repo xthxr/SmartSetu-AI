@@ -1,13 +1,18 @@
 [server]
 headless = true
-port = 8080
+port = $PORT  # Let Render assign the port dynamically
 enableCORS = false
 enableXsrfProtection = false
 
 [theme]
-base = "light"
-primaryColor = "#4CAF50"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F5F5"
-textColor = "#000000"
+base = "dark"
+primaryColor = "#4DC4D2"
+backgroundColor = "#0F0F0F"
+secondaryBackgroundColor = "#1E1E1E"
+textColor = "#FFFFFF"
 font = "sans serif"
+
+[client]
+showSidebarNavigation = true
+toolbarMode = "minimal"
+favicon = "favicon.png"
