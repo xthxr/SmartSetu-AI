@@ -12,7 +12,7 @@ st.set_page_config(page_title="SmartSetu-AI", layout="wide")
 st.markdown(
     """
     <div style="text-align: center;">
-        <img src="https://raw.githubusercontent.com/mrashis06/SmartSetu-AI/main/assets/logo.png" width="150">
+        <img src="https://raw.githubusercontent.com/mrashis06/SmartSetu-AI/main/assets/logo.png" width="250">
     </div>
     """,
     unsafe_allow_html=True
@@ -71,15 +71,8 @@ score_df = pd.DataFrame(scores)
 
 # --- Sidebar: Vendor Selection ---
 st.sidebar.title("Vendor Report Access")
-search_query = st.sidebar.text_input("Search Vendor Name").strip().lower()
-filtered_vendors = (
-    [v for v in score_df["Vendor"] if search_query in v.lower()] if search_query else score_df["Vendor"].tolist()
-)
-if not filtered_vendors:
-    st.sidebar.warning("No matching vendor found.")
-    filtered_vendors = score_df["Vendor"].tolist()
 
-selected_vendor = st.sidebar.selectbox("Choose a Vendor:", filtered_vendors)
+selected_vendor = st.sidebar.selectbox("Choose a Vendor:", score_df["Vendor"].tolist())
 selected_row = score_df[score_df["Vendor"] == selected_vendor].iloc[0]
 
 # Display selected vendor scores
@@ -88,9 +81,19 @@ st.sidebar.metric("Credit Score", selected_row["Credit Score"])
 st.sidebar.metric("Risk Score", selected_row["Risk Score"])
 st.sidebar.metric("Risk Level", selected_row["Risk Level"])
 
-# --- Output Section ---
-st.sidebar.markdown(" Loan Eligibility & Repayment Details")
+# Download button for selected vendor
+vendor_row_df = pd.DataFrame([selected_row])
+csv_data = vendor_row_df.to_csv(index=False).encode('utf-8')
+st.sidebar.download_button("Download My Report", data=csv_data, file_name=f"{selected_vendor}_report.csv", mime="text/csv")
 
+# --- Main: All Vendors Table ---
+st.subheader(" All Vendor Scores")
+st.dataframe(score_df, use_container_width=True)
+
+# --- Output Section ---
+st.markdown(f"##### Loan Report for **{selected_vendor}**")
+
+st.markdown("### Loan Eligibility & Repayment Details")
 credit = selected_row["Credit Score"]
 risk = selected_row["Risk Score"]
 
@@ -113,40 +116,30 @@ else:
 
 # EMI Calculator
 if loan_amount > 0:
-    st.sidebar.success(f" Eligible for a loan of ₹{loan_amount:,} at {interest_rate}% interest per year.")
+    st.success(f" **Eligible for a loan of ₹{loan_amount:,} at {interest_rate}% interest per year.**")
 
-    st.sidebar.markdown("###  Simulate Your Loan Repayment")
+    st.markdown("###  Simulate Your Loan Repayment")
 
     # Vendor selects loan amount (within limit)
-    custom_loan = st.sidebar.slider("Select Loan Amount (₹)", 1000, loan_amount, step=1000)
+    custom_loan = st.slider("**Select Loan Amount (₹)**", 1000, loan_amount, step=1000)
 
     # Vendor selects repayment period
-    custom_months = st.sidebar.slider("Select Repayment Duration (in months)", 6, 24, value=12)
+    custom_months = st.slider("**Select Repayment Duration (in months)**", 6, 24, value=12)
 
     # Calculate total repayment and EMI
     total_repayment = custom_loan + (custom_loan * interest_rate * custom_months / (12 * 100))
     emi = round(total_repayment / custom_months, 2)
 
-    st.sidebar.markdown(f"""
-    -Loan Amount: ₹{custom_loan:,}  
-    -Interest Rate: {interest_rate}%  
-    -Duration: {custom_months} months  
-    -Monthly EMI: ₹{emi:,}  
-    -Total Repayment: ₹{round(total_repayment):,}
+    st.markdown(f"""
+    -**Loan Amount:** ₹{custom_loan:,}  
+    -**Interest Rate:** {interest_rate}%  
+    -**Duration:** {custom_months} months  
+    -**Monthly EMI:** ₹{emi:,}  
+    -**Total Repayment:** ₹{round(total_repayment):,}
     """)
+
 else:
-    st.sidebar.error(" Not eligible for a loan based on current credit score.")
-
-# Download button for selected vendor
-vendor_row_df = pd.DataFrame([selected_row])
-csv_data = vendor_row_df.to_csv(index=False).encode('utf-8')
-st.sidebar.download_button("Download My Report", data=csv_data, file_name=f"{selected_vendor}_report.csv", mime="text/csv")
-
-
-
-# --- Main: All Vendors Table ---
-st.subheader(" All Vendor Scores")
-st.dataframe(score_df, use_container_width=True)
+    st.error(" Not eligible for a loan based on current credit score.")
 
 # --- Charts ---
 st.subheader(" Visualize Scores")
@@ -154,7 +147,7 @@ chart_type = st.selectbox("Select Chart Type:", ["Bar Chart", "Scatter Plot"])
 fig_width, fig_height, rotation = (12, 6, 45)
 
 if chart_type == "Bar Chart":
-    top_n = st.slider("Select number of vendors", 5, len(score_df), 10, step=5)
+    top_n = st.slider("Select number of vendors", 6, len(score_df), 12, step=5)
     top_df = score_df.sort_values("Credit Score", ascending=False).head(top_n)
     fig, ax = plt.subplots(figsize=(max(10, top_n * 0.6), fig_height))
     x = range(len(top_df))
