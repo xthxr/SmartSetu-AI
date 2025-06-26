@@ -10,11 +10,11 @@ def authorize_google_sheet():
     try:
         creds_info = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
-        if creds_info:  # On Render or any environment using env var
-            creds = Credentials.from_service_account_info(json.loads(creds_info), scopes=SCOPES)
-        else:  # Local fallback to file for easy dev/testing
-            creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
-
+        if creds_info:
+           creds = Credentials.from_service_account_info(json.loads(creds_info), scopes=SCOPES)
+        else:
+           creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+           
         client = gspread.authorize(creds)
         return client
 
