@@ -1,6 +1,5 @@
 [server]
 headless = true
-port = $PORT  # Let Render assign the port dynamically
 enableCORS = false
 enableXsrfProtection = false
 
